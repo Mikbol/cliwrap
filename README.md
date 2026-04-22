@@ -15,6 +15,11 @@ cases, no per-CLI framework. One file = one extension.
 
 ## Install
 
+### Requirements
+
+- **bash 4.0+** (associative arrays, `${var@Q}`). macOS still ships bash 3.2 — run `brew install bash` first.
+- POSIX `grep`, `sed`, `tr`.
+
 ### From source (recommended)
 
 ```bash

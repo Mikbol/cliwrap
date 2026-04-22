@@ -2,6 +2,12 @@
 # cliwrap — manage CLI wrappers
 set -euo pipefail
 
+if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
+    printf >&2 'cliwrap: bash 4.0 or higher is required (you have %s).\n' "${BASH_VERSION:-unknown}"
+    printf >&2 'On macOS: brew install bash\n'
+    exit 1
+fi
+
 CLIWRAP_HOME="${CLIWRAP_HOME:-$HOME/.cliwrap}"
 # Resolve symlinks so lib/ is found even when cliwrap is invoked via a symlink
 _self="${BASH_SOURCE[0]}"
@@ -168,6 +174,12 @@ cmd_remove() {
 cmd_doctor() {
     echo "CLIWRAP_HOME: $CLIWRAP_HOME"
     echo "CLIWRAP_LIB:  $CLIWRAP_LIB"
+    printf 'bash:         %s' "${BASH_VERSION:-unknown}"
+    if [[ "${BASH_VERSINFO:-0}" -lt 4 ]]; then
+        echo "  ⚠  bash 4.0+ required (on macOS: brew install bash)"
+    else
+        echo "  OK"
+    fi
     [[ -f "$CLIWRAP_LIB/runtime.sh" ]] \
         && echo "runtime.sh:   OK" \
         || echo "runtime.sh:   MISSING"

@@ -1,6 +1,14 @@
 # cliwrap runtime — sourced into user's shell via `eval "$(cliwrap init)"`
 # Provides: cliwrap_register, cliwrap_dispatch, _cliwrap_complete
 #
+# Requires bash 4.0+ (associative arrays, ${var@Q}). On macOS: brew install bash.
+if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
+    printf >&2 'cliwrap: bash 4.0 or higher is required (you have %s).\n' "${BASH_VERSION:-unknown}"
+    printf >&2 'On macOS: brew install bash, then restart your shell.\n'
+    # shellcheck disable=SC2317  # exit fallback runs when not sourced
+    return 1 2>/dev/null || exit 1
+fi
+
 # A cliwrap "extension" is a single .sh file with metadata in comments:
 #   # @match <pattern>    which subcommand this applies to
 #                         "*"           → all invocations (global)
