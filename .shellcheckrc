@@ -1,0 +1,6 @@
+# Treat arrays used in test asserts as strings (false positives from `out=` assignments)
+disable=SC2128
+disable=SC2178
+
+# Follow sourced files (enables cross-file analysis)
+external-sources=true

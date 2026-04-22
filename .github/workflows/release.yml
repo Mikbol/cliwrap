@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches VERSION
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          FILE="$(cat VERSION)"
+          if [[ "$TAG" != "$FILE" ]]; then
+            echo "Tag v$TAG does not match VERSION file ($FILE)"
+            exit 1
+          fi
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run checks
+        run: make check
+
+      - name: Build tarball
+        run: make dist
+
+      - name: Extract changelog section
+        id: changelog
+        run: |
+          VERSION="$(cat VERSION)"
+          awk -v v="$VERSION" '
+            /^## \[/ && found { exit }
+            found { print }
+            $0 ~ "^## \\[" v "\\]" { found=1 }
+          ' CHANGELOG.md > release-notes.md
+          echo "file=release-notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: ${{ steps.changelog.outputs.file }}
+          files: dist/*.tar.gz
+          draft: false
+          prerelease: false

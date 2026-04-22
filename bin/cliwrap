@@ -1,0 +1,200 @@
+#!/usr/bin/env bash
+# cliwrap — manage CLI wrappers
+set -euo pipefail
+
+CLIWRAP_HOME="${CLIWRAP_HOME:-$HOME/.cliwrap}"
+# Resolve symlinks so lib/ is found even when cliwrap is invoked via a symlink
+_self="${BASH_SOURCE[0]}"
+while [[ -L "$_self" ]]; do _self="$(readlink "$_self")"; done
+_self_dir="$(cd "$(dirname "$_self")/.." && pwd)"
+CLIWRAP_LIB="${CLIWRAP_LIB:-$_self_dir/lib}"
+CLIWRAP_VERSION="$(cat "$_self_dir/VERSION" 2>/dev/null || echo "dev")"
+unset _self _self_dir
+
+usage() {
+    cat <<EOF
+cliwrap — extend any CLI with custom commands, hooks, and args
+
+USAGE
+  cliwrap init                       Print shell init code (add to .bashrc/.zshrc)
+  cliwrap wrap <cli>                 Create a wrapper for <cli> (e.g. aws, git)
+  cliwrap unwrap <cli>               Remove all extensions for <cli>
+  cliwrap new <cli> <name> [opts]    Scaffold a new extension
+      --match <pattern>              Subcommand pattern (default: <name>)
+      --mode  <pre|post|replace>     Lifecycle mode (default: replace)
+      --desc  <text>                 Short description
+  cliwrap list [<cli>]               List extensions
+  cliwrap edit <cli> <name>          Open extension in \$EDITOR
+  cliwrap remove <cli> <name>        Delete an extension
+  cliwrap doctor                     Diagnose setup
+
+SETUP (one-time)
+  echo 'eval "\$(cliwrap init)"' >> ~/.bashrc
+
+CONCEPTS
+  A wrapper is a shell function that replaces a CLI (aws, git, docker, ...).
+  An extension is a single .sh file in \$CLIWRAP_HOME/<cli>/ with metadata.
+  See README.md for the extension format.
+EOF
+}
+
+die() { echo "cliwrap: $*" >&2; exit 1; }
+
+cmd_init() {
+    # Print code to be eval'd in the user's shell
+    echo "# cliwrap shell integration"
+    echo "export CLIWRAP_HOME='$CLIWRAP_HOME'"
+    echo "source '$CLIWRAP_LIB/runtime.sh'"
+    # Auto-register every CLI that has an extension directory
+    if [[ -d "$CLIWRAP_HOME" ]]; then
+        local d
+        for d in "$CLIWRAP_HOME"/*/; do
+            [[ -d "$d" ]] || continue
+            local cli
+            cli=$(basename "$d")
+            echo "cliwrap_register '$cli'"
+        done
+    fi
+}
+
+cmd_wrap() {
+    local cli="${1:-}"
+    [[ -z "$cli" ]] && die "wrap: missing <cli> (e.g. 'cliwrap wrap aws')"
+    mkdir -p "$CLIWRAP_HOME/$cli"
+    echo "Wrapped '$cli' → $CLIWRAP_HOME/$cli/"
+    echo "Now run: cliwrap new $cli <extension-name>"
+    echo "Then reload your shell (or: eval \"\$(cliwrap init)\")"
+}
+
+cmd_unwrap() {
+    local cli="${1:-}"
+    [[ -z "$cli" ]] && die "unwrap: missing <cli>"
+    [[ -d "$CLIWRAP_HOME/$cli" ]] || die "no wrapper for '$cli'"
+    read -rp "Delete $CLIWRAP_HOME/$cli and all extensions? [y/N] " yn
+    [[ "$yn" == "y" || "$yn" == "Y" ]] || { echo "cancelled"; return; }
+    rm -rf "${CLIWRAP_HOME:?}/$cli"
+    echo "Removed."
+}
+
+cmd_new() {
+    local cli="${1:-}" name="${2:-}"
+    [[ -z "$cli" || -z "$name" ]] && die "new: needs <cli> and <name>"
+    shift 2
+
+    local match="$name" mode="replace" desc="TODO: describe this extension"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --match) match="$2"; shift 2 ;;
+            --mode)  mode="$2";  shift 2 ;;
+            --desc)  desc="$2";  shift 2 ;;
+            *) die "new: unknown option '$1'" ;;
+        esac
+    done
+
+    mkdir -p "$CLIWRAP_HOME/$cli"
+    local file="$CLIWRAP_HOME/$cli/$name.sh"
+    [[ -e "$file" ]] && die "already exists: $file"
+
+    cat > "$file" <<EOF
+# @match $match
+# @mode  $mode
+# @desc  $desc
+# @arg   --verbose         Print extra info
+# @arg   --output=FORMAT   Output format (json|text)
+
+run() {
+    # Declared args are available as ARG_VERBOSE, ARG_OUTPUT, …
+    # Remaining args are in "\$@"
+    # Use 'command $cli ...' to call the real CLI without recursion.
+
+    if [[ -n "\${ARG_VERBOSE:-}" ]]; then
+        echo "[$name] args: \$*" >&2
+    fi
+
+    echo "Hello from the '$name' extension of $cli"
+}
+EOF
+    echo "Created $file"
+    echo "Edit it, then reload your shell."
+}
+
+cmd_list() {
+    local only="${1:-}"
+    [[ -d "$CLIWRAP_HOME" ]] || { echo "(no wrappers yet — run 'cliwrap wrap <cli>')"; return; }
+
+    local d
+    for d in "$CLIWRAP_HOME"/*/; do
+        [[ -d "$d" ]] || continue
+        local cli; cli=$(basename "$d")
+        [[ -n "$only" && "$only" != "$cli" ]] && continue
+        echo "── $cli ──"
+        local f any=0
+        for f in "$d"/*.sh; do
+            [[ -f "$f" ]] || continue
+            any=1
+            local n m mo de
+            n=$(basename "$f" .sh)
+            m=$(_list_meta "$f" match)
+            mo=$(_list_meta "$f" mode); mo="${mo:-pre}"
+            de=$(_list_meta "$f" desc)
+            printf "  %-20s  match=%-20s  mode=%-8s  %s\n" "$n" "$m" "$mo" "$de"
+        done
+        [[ "$any" == "0" ]] && echo "  (no extensions)"
+    done
+}
+
+_list_meta() {
+    grep -E "^#[[:space:]]*@$2([[:space:]]|$)" "$1" 2>/dev/null \
+        | head -1 | sed -E "s/^#[[:space:]]*@$2[[:space:]]*//"
+}
+
+cmd_edit() {
+    local cli="${1:-}" name="${2:-}"
+    [[ -z "$cli" || -z "$name" ]] && die "edit: needs <cli> and <name>"
+    local file="$CLIWRAP_HOME/$cli/$name.sh"
+    [[ -f "$file" ]] || die "not found: $file"
+    "${EDITOR:-vi}" "$file"
+}
+
+cmd_remove() {
+    local cli="${1:-}" name="${2:-}"
+    [[ -z "$cli" || -z "$name" ]] && die "remove: needs <cli> and <name>"
+    local file="$CLIWRAP_HOME/$cli/$name.sh"
+    [[ -f "$file" ]] || die "not found: $file"
+    rm "$file"
+    echo "Removed $file"
+}
+
+cmd_doctor() {
+    echo "CLIWRAP_HOME: $CLIWRAP_HOME"
+    echo "CLIWRAP_LIB:  $CLIWRAP_LIB"
+    [[ -f "$CLIWRAP_LIB/runtime.sh" ]] \
+        && echo "runtime.sh:   OK" \
+        || echo "runtime.sh:   MISSING"
+    [[ -d "$CLIWRAP_HOME" ]] \
+        && echo "home dir:     OK" \
+        || echo "home dir:     will be created on first 'wrap'"
+
+    if [[ -z "${CLIWRAP_SHELL_LOADED:-}" ]]; then
+        echo ""
+        echo "⚠  Shell integration not loaded."
+        echo "   Add to your .bashrc/.zshrc:"
+        echo "     eval \"\$(cliwrap init)\""
+    fi
+}
+
+# ─── main ────────────────────────────────────────────────────────────────────
+sub="${1:-help}"; shift || true
+case "$sub" in
+    init)    cmd_init "$@" ;;
+    wrap)    cmd_wrap "$@" ;;
+    unwrap)  cmd_unwrap "$@" ;;
+    new)     cmd_new "$@" ;;
+    list)    cmd_list "$@" ;;
+    edit)    cmd_edit "$@" ;;
+    remove)  cmd_remove "$@" ;;
+    doctor)  cmd_doctor "$@" ;;
+    version|-v|--version) echo "cliwrap $CLIWRAP_VERSION" ;;
+    help|-h|--help) usage ;;
+    *) echo "unknown command: $sub"; usage; exit 1 ;;
+esac

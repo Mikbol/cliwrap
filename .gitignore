@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Backup files
+*.bak
+*.orig
+
+# Local install artifacts
+dist/
+*.tar.gz
+
+# Test artifacts
+coverage/
+*.log
+
+# Env / secrets
+.env
+.env.local
