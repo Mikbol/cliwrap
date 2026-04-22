@@ -147,6 +147,7 @@ cmd_list() {
         done
         [[ "$any" == "0" ]] && echo "  (no extensions)"
     done
+    return 0
 }
 
 _list_meta() {
