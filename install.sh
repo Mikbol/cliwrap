@@ -4,10 +4,10 @@ set -euo pipefail
 
 PREFIX="${PREFIX:-$HOME/.local}"
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --prefix) PREFIX="$2"; shift 2 ;;
-        *) echo "unknown: $1"; exit 1 ;;
-    esac
+  case "$1" in
+    --prefix) PREFIX="$2"; shift 2 ;;
+    *) echo "unknown: $1"; exit 1 ;;
+  esac
 done
 
 SRC="$(cd "$(dirname "$0")" && pwd)"

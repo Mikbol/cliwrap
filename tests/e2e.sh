@@ -10,37 +10,37 @@ export CLIWRAP_LIB="$ROOT/lib"
 # Fake binaries that just print what they were called with
 FAKE_BIN=$(mktemp -d)
 for tool in aws git docker; do
-    cat > "$FAKE_BIN/$tool" <<EOF
+  cat > "$FAKE_BIN/$tool" <<EOF
 #!/bin/bash
 echo "[REAL $tool] \$@ | AWS_REGION=\${AWS_REGION:-unset} AWS_PROFILE=\${AWS_PROFILE:-unset} AWS_PAGER=\${AWS_PAGER:-unset}"
 EOF
-    chmod +x "$FAKE_BIN/$tool"
+  chmod +x "$FAKE_BIN/$tool"
 done
 export PATH="$FAKE_BIN:$PATH"
 
 # Set up wrappers from examples
 for cli in aws git docker; do
-    mkdir -p "$CLIWRAP_HOME/$cli"
-    cp "$ROOT/examples/$cli"/*.sh "$CLIWRAP_HOME/$cli/"
+  mkdir -p "$CLIWRAP_HOME/$cli"
+  cp "$ROOT/examples/$cli"/*.sh "$CLIWRAP_HOME/$cli/"
 done
 
 # Source the runtime and register
 source "$ROOT/lib/runtime.sh"
 for cli in aws git docker; do
-    cliwrap_register "$cli"
+  cliwrap_register "$cli"
 done
 
 pass=0; fail=0
 check() {
-    local desc="$1" expected="$2" actual="$3"
-    if [[ "$actual" == *"$expected"* ]]; then
-        echo "  ✓ $desc"; pass=$((pass+1))
-    else
-        echo "  ✗ $desc"
-        echo "     expected to contain: $expected"
-        echo "     got: $actual"
-        fail=$((fail+1))
-    fi
+  local desc="$1" expected="$2" actual="$3"
+  if [[ "$actual" == *"$expected"* ]]; then
+    echo "  ✓ $desc"; pass=$((pass+1))
+  else
+    echo "  ✗ $desc"
+    echo "     expected to contain: $expected"
+    echo "     got: $actual"
+    fail=$((fail+1))
+  fi
 }
 
 echo

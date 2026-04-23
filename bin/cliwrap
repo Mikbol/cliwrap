@@ -3,9 +3,9 @@
 set -euo pipefail
 
 if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
-    printf >&2 'cliwrap: bash 4.0 or higher is required (you have %s).\n' "${BASH_VERSION:-unknown}"
-    printf >&2 'On macOS: brew install bash\n'
-    exit 1
+  printf >&2 'cliwrap: bash 4.0 or higher is required (you have %s).\n' "${BASH_VERSION:-unknown}"
+  printf >&2 'On macOS: brew install bash\n'
+  exit 1
 fi
 
 CLIWRAP_HOME="${CLIWRAP_HOME:-$HOME/.cliwrap}"
@@ -18,7 +18,7 @@ CLIWRAP_VERSION="$(cat "$_self_dir/VERSION" 2>/dev/null || echo "dev")"
 unset _self _self_dir
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 cliwrap — extend any CLI with custom commands, hooks, and args
 
 USAGE
@@ -47,61 +47,61 @@ EOF
 die() { echo "cliwrap: $*" >&2; exit 1; }
 
 cmd_init() {
-    # Print code to be eval'd in the user's shell
-    echo "# cliwrap shell integration"
-    echo "export CLIWRAP_HOME='$CLIWRAP_HOME'"
-    echo "source '$CLIWRAP_LIB/runtime.sh'"
-    # Auto-register every CLI that has an extension directory
-    if [[ -d "$CLIWRAP_HOME" ]]; then
-        local d
-        for d in "$CLIWRAP_HOME"/*/; do
-            [[ -d "$d" ]] || continue
-            local cli
-            cli=$(basename "$d")
-            echo "cliwrap_register '$cli'"
-        done
-    fi
+  # Print code to be eval'd in the user's shell
+  echo "# cliwrap shell integration"
+  echo "export CLIWRAP_HOME='$CLIWRAP_HOME'"
+  echo "source '$CLIWRAP_LIB/runtime.sh'"
+  # Auto-register every CLI that has an extension directory
+  if [[ -d "$CLIWRAP_HOME" ]]; then
+    local d
+    for d in "$CLIWRAP_HOME"/*/; do
+      [[ -d "$d" ]] || continue
+      local cli
+      cli=$(basename "$d")
+      echo "cliwrap_register '$cli'"
+    done
+  fi
 }
 
 cmd_wrap() {
-    local cli="${1:-}"
-    [[ -z "$cli" ]] && die "wrap: missing <cli> (e.g. 'cliwrap wrap aws')"
-    mkdir -p "$CLIWRAP_HOME/$cli"
-    echo "Wrapped '$cli' → $CLIWRAP_HOME/$cli/"
-    echo "Now run: cliwrap new $cli <extension-name>"
-    echo "Then reload your shell (or: eval \"\$(cliwrap init)\")"
+  local cli="${1:-}"
+  [[ -z "$cli" ]] && die "wrap: missing <cli> (e.g. 'cliwrap wrap aws')"
+  mkdir -p "$CLIWRAP_HOME/$cli"
+  echo "Wrapped '$cli' → $CLIWRAP_HOME/$cli/"
+  echo "Now run: cliwrap new $cli <extension-name>"
+  echo "Then reload your shell (or: eval \"\$(cliwrap init)\")"
 }
 
 cmd_unwrap() {
-    local cli="${1:-}"
-    [[ -z "$cli" ]] && die "unwrap: missing <cli>"
-    [[ -d "$CLIWRAP_HOME/$cli" ]] || die "no wrapper for '$cli'"
-    read -rp "Delete $CLIWRAP_HOME/$cli and all extensions? [y/N] " yn
-    [[ "$yn" == "y" || "$yn" == "Y" ]] || { echo "cancelled"; return; }
-    rm -rf "${CLIWRAP_HOME:?}/$cli"
-    echo "Removed."
+  local cli="${1:-}"
+  [[ -z "$cli" ]] && die "unwrap: missing <cli>"
+  [[ -d "$CLIWRAP_HOME/$cli" ]] || die "no wrapper for '$cli'"
+  read -rp "Delete $CLIWRAP_HOME/$cli and all extensions? [y/N] " yn
+  [[ "$yn" == "y" || "$yn" == "Y" ]] || { echo "cancelled"; return; }
+  rm -rf "${CLIWRAP_HOME:?}/$cli"
+  echo "Removed."
 }
 
 cmd_new() {
-    local cli="${1:-}" name="${2:-}"
-    [[ -z "$cli" || -z "$name" ]] && die "new: needs <cli> and <name>"
-    shift 2
+  local cli="${1:-}" name="${2:-}"
+  [[ -z "$cli" || -z "$name" ]] && die "new: needs <cli> and <name>"
+  shift 2
 
-    local match="$name" mode="replace" desc="TODO: describe this extension"
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --match) match="$2"; shift 2 ;;
-            --mode)  mode="$2";  shift 2 ;;
-            --desc)  desc="$2";  shift 2 ;;
-            *) die "new: unknown option '$1'" ;;
-        esac
-    done
+  local match="$name" mode="replace" desc="TODO: describe this extension"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --match) match="$2"; shift 2 ;;
+      --mode)  mode="$2";  shift 2 ;;
+      --desc)  desc="$2";  shift 2 ;;
+      *) die "new: unknown option '$1'" ;;
+    esac
+  done
 
-    mkdir -p "$CLIWRAP_HOME/$cli"
-    local file="$CLIWRAP_HOME/$cli/$name.sh"
-    [[ -e "$file" ]] && die "already exists: $file"
+  mkdir -p "$CLIWRAP_HOME/$cli"
+  local file="$CLIWRAP_HOME/$cli/$name.sh"
+  [[ -e "$file" ]] && die "already exists: $file"
 
-    cat > "$file" <<EOF
+  cat > "$file" <<EOF
 # @match $match
 # @mode  $mode
 # @desc  $desc
@@ -120,94 +120,94 @@ run() {
     echo "Hello from the '$name' extension of $cli"
 }
 EOF
-    echo "Created $file"
-    echo "Edit it, then reload your shell."
+  echo "Created $file"
+  echo "Edit it, then reload your shell."
 }
 
 cmd_list() {
-    local only="${1:-}"
-    [[ -d "$CLIWRAP_HOME" ]] || { echo "(no wrappers yet — run 'cliwrap wrap <cli>')"; return; }
+  local only="${1:-}"
+  [[ -d "$CLIWRAP_HOME" ]] || { echo "(no wrappers yet — run 'cliwrap wrap <cli>')"; return; }
 
-    local d
-    for d in "$CLIWRAP_HOME"/*/; do
-        [[ -d "$d" ]] || continue
-        local cli; cli=$(basename "$d")
-        [[ -n "$only" && "$only" != "$cli" ]] && continue
-        echo "── $cli ──"
-        local f any=0
-        for f in "$d"/*.sh; do
-            [[ -f "$f" ]] || continue
-            any=1
-            local n m mo de
-            n=$(basename "$f" .sh)
-            m=$(_list_meta "$f" match)
-            mo=$(_list_meta "$f" mode); mo="${mo:-pre}"
-            de=$(_list_meta "$f" desc)
-            printf "  %-20s  match=%-20s  mode=%-8s  %s\n" "$n" "$m" "$mo" "$de"
-        done
-        [[ "$any" == "0" ]] && echo "  (no extensions)"
+  local d
+  for d in "$CLIWRAP_HOME"/*/; do
+    [[ -d "$d" ]] || continue
+    local cli; cli=$(basename "$d")
+    [[ -n "$only" && "$only" != "$cli" ]] && continue
+    echo "── $cli ──"
+    local f any=0
+    for f in "$d"/*.sh; do
+      [[ -f "$f" ]] || continue
+      any=1
+      local n m mo de
+      n=$(basename "$f" .sh)
+      m=$(_list_meta "$f" match)
+      mo=$(_list_meta "$f" mode); mo="${mo:-pre}"
+      de=$(_list_meta "$f" desc)
+      printf "  %-20s  match=%-20s  mode=%-8s  %s\n" "$n" "$m" "$mo" "$de"
     done
-    return 0
+    [[ "$any" == "0" ]] && echo "  (no extensions)"
+  done
+  return 0
 }
 
 _list_meta() {
-    grep -E "^#[[:space:]]*@$2([[:space:]]|$)" "$1" 2>/dev/null \
-        | head -1 | sed -E "s/^#[[:space:]]*@$2[[:space:]]*//"
+  grep -E "^#[[:space:]]*@$2([[:space:]]|$)" "$1" 2>/dev/null \
+    | head -1 | sed -E "s/^#[[:space:]]*@$2[[:space:]]*//"
 }
 
 cmd_edit() {
-    local cli="${1:-}" name="${2:-}"
-    [[ -z "$cli" || -z "$name" ]] && die "edit: needs <cli> and <name>"
-    local file="$CLIWRAP_HOME/$cli/$name.sh"
-    [[ -f "$file" ]] || die "not found: $file"
-    "${EDITOR:-vi}" "$file"
+  local cli="${1:-}" name="${2:-}"
+  [[ -z "$cli" || -z "$name" ]] && die "edit: needs <cli> and <name>"
+  local file="$CLIWRAP_HOME/$cli/$name.sh"
+  [[ -f "$file" ]] || die "not found: $file"
+  "${EDITOR:-vi}" "$file"
 }
 
 cmd_remove() {
-    local cli="${1:-}" name="${2:-}"
-    [[ -z "$cli" || -z "$name" ]] && die "remove: needs <cli> and <name>"
-    local file="$CLIWRAP_HOME/$cli/$name.sh"
-    [[ -f "$file" ]] || die "not found: $file"
-    rm "$file"
-    echo "Removed $file"
+  local cli="${1:-}" name="${2:-}"
+  [[ -z "$cli" || -z "$name" ]] && die "remove: needs <cli> and <name>"
+  local file="$CLIWRAP_HOME/$cli/$name.sh"
+  [[ -f "$file" ]] || die "not found: $file"
+  rm "$file"
+  echo "Removed $file"
 }
 
 cmd_doctor() {
-    echo "CLIWRAP_HOME: $CLIWRAP_HOME"
-    echo "CLIWRAP_LIB:  $CLIWRAP_LIB"
-    printf 'bash:         %s' "${BASH_VERSION:-unknown}"
-    if [[ "${BASH_VERSINFO:-0}" -lt 4 ]]; then
-        echo "  ⚠  bash 4.0+ required (on macOS: brew install bash)"
-    else
-        echo "  OK"
-    fi
-    [[ -f "$CLIWRAP_LIB/runtime.sh" ]] \
-        && echo "runtime.sh:   OK" \
-        || echo "runtime.sh:   MISSING"
-    [[ -d "$CLIWRAP_HOME" ]] \
-        && echo "home dir:     OK" \
-        || echo "home dir:     will be created on first 'wrap'"
+  echo "CLIWRAP_HOME: $CLIWRAP_HOME"
+  echo "CLIWRAP_LIB:  $CLIWRAP_LIB"
+  printf 'bash:         %s' "${BASH_VERSION:-unknown}"
+  if [[ "${BASH_VERSINFO:-0}" -lt 4 ]]; then
+    echo "  ⚠  bash 4.0+ required (on macOS: brew install bash)"
+  else
+    echo "  OK"
+  fi
+  [[ -f "$CLIWRAP_LIB/runtime.sh" ]] \
+    && echo "runtime.sh:   OK" \
+    || echo "runtime.sh:   MISSING"
+  [[ -d "$CLIWRAP_HOME" ]] \
+    && echo "home dir:     OK" \
+    || echo "home dir:     will be created on first 'wrap'"
 
-    if [[ -z "${CLIWRAP_SHELL_LOADED:-}" ]]; then
-        echo ""
-        echo "⚠  Shell integration not loaded."
-        echo "   Add to your .bashrc/.zshrc:"
-        echo "     eval \"\$(cliwrap init)\""
-    fi
+  if [[ -z "${CLIWRAP_SHELL_LOADED:-}" ]]; then
+    echo ""
+    echo "⚠  Shell integration not loaded."
+    echo "   Add to your .bashrc/.zshrc:"
+    echo "     eval \"\$(cliwrap init)\""
+  fi
 }
 
 # ─── main ────────────────────────────────────────────────────────────────────
 sub="${1:-help}"; shift || true
 case "$sub" in
-    init)    cmd_init "$@" ;;
-    wrap)    cmd_wrap "$@" ;;
-    unwrap)  cmd_unwrap "$@" ;;
-    new)     cmd_new "$@" ;;
-    list)    cmd_list "$@" ;;
-    edit)    cmd_edit "$@" ;;
-    remove)  cmd_remove "$@" ;;
-    doctor)  cmd_doctor "$@" ;;
-    version|-v|--version) echo "cliwrap $CLIWRAP_VERSION" ;;
-    help|-h|--help) usage ;;
-    *) echo "unknown command: $sub"; usage; exit 1 ;;
+  init)    cmd_init "$@" ;;
+  wrap)    cmd_wrap "$@" ;;
+  unwrap)  cmd_unwrap "$@" ;;
+  new)     cmd_new "$@" ;;
+  list)    cmd_list "$@" ;;
+  edit)    cmd_edit "$@" ;;
+  remove)  cmd_remove "$@" ;;
+  doctor)  cmd_doctor "$@" ;;
+  version|-v|--version) echo "cliwrap $CLIWRAP_VERSION" ;;
+  help|-h|--help) usage ;;
+  *) echo "unknown command: $sub"; usage; exit 1 ;;
 esac

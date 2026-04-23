@@ -5,14 +5,14 @@
 # @arg   --dry-run  Show what would be removed
 
 run() {
-    local flags=""
-    [[ -n "${ARG_ALL:-}" ]] && flags="--all"
+  local flags=""
+  [[ -n "${ARG_ALL:-}" ]] && flags="--all"
 
-    if [[ -n "${ARG_DRY_RUN:-}" ]]; then
-        echo "Would run: docker system prune $flags --volumes"
-        command docker system df
-        return
-    fi
+  if [[ -n "${ARG_DRY_RUN:-}" ]]; then
+    echo "Would run: docker system prune $flags --volumes"
+    command docker system df
+    return
+  fi
 
-    command docker system prune $flags --volumes -f
+  command docker system prune $flags --volumes -f
 }
