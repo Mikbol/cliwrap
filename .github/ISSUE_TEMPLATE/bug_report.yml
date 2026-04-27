@@ -1,0 +1,70 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in the details
+        below so we can reproduce the issue.
+
+  - type: input
+    id: version
+    attributes:
+      label: cliwrap version
+      description: Output of `cliwrap --version`
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: shell
+    attributes:
+      label: Shell and version
+      description: Output of `$SHELL --version | head -1`
+      placeholder: "GNU bash, version 5.2.15"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 14.4 / Ubuntu 22.04 / …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Clear description of the bug
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands to trigger the bug
+      placeholder: |
+        1. cliwrap wrap aws
+        2. cliwrap new aws mycmd …
+        3. aws mycmd …
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: extension
+    attributes:
+      label: Relevant extension file (if any)
+      description: Paste the contents of the extension that's misbehaving
+      render: bash
