@@ -1,7 +1,7 @@
 # cliwrap runtime — sourced into user's shell via `eval "$(cliwrap init)"`
 # Provides: cliwrap_register, cliwrap_dispatch, _cliwrap_complete
 #
-# Requires bash 4.0+ (associative arrays, ${var@Q}). On macOS: brew install bash.
+# Requires bash 4.0+ (associative arrays). On macOS: brew install bash.
 if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
   printf >&2 'cliwrap: bash 4.0 or higher is required (you have %s).\n' "${BASH_VERSION:-unknown}"
   printf >&2 'On macOS: brew install bash, then restart your shell.\n'
@@ -305,12 +305,13 @@ _cliwrap_help_section() {
 cliwrap_register() {
   local cli="$1"
 
-  # Capture native completion spec BEFORE we overwrite it.
-  # native_spec is consumed by the `eval` below via ${native_spec@Q}.
-  local native_spec
-  # shellcheck disable=SC2034
+  # Capture native completion spec BEFORE we overwrite it. printf %q (bash 3.2+)
+  # is used instead of ${var@Q} (bash 4.4+) so the version check at the top of
+  # this file accurately reflects 4.0+.
+  local native_spec quoted
   native_spec=$(complete -p "$cli" 2>/dev/null || true)
-  eval "_CLIWRAP_NATIVE_$(echo "$cli" | tr -c 'A-Za-z0-9' '_')=\${native_spec@Q}"
+  quoted=$(printf '%q' "$native_spec")
+  eval "_CLIWRAP_NATIVE_$(echo "$cli" | tr -c 'A-Za-z0-9' '_')=$quoted"
 
   # Define the wrapper function. Using eval so we can template the name.
   eval "

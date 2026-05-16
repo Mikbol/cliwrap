@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-04-22
 
-Initial release.
+Initial release. **Requires bash 4.0+** (associative arrays). On macOS: `brew install bash`.
 
 ### Added
 - Single extension file format with metadata directives (`@match`, `@mode`, `@arg`, `@desc`)
