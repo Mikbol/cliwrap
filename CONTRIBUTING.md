@@ -33,9 +33,7 @@ VERSION              Single source of truth for version
 
 ## Coding standards
 
-- **Bash 3.2+ compatible** (macOS ships bash 3.2; don't use `declare -A` in
-  runtime without a version guard; don't use `${var@Q}` in code paths that
-  need to run on old bash — it's only used in registration which is 4.4+)
+- **Bash 4.0+ required** — associative arrays (`local -A`) are fine. `${var@Q}` is bash 4.4+; prefer `printf '%q'` for portability.
 - **Pass `shellcheck`** — run `make lint`. Project-wide disables live in `.shellcheckrc`.
 - **Quote variable expansions** (`"$var"`, not `$var`).
 - **Prefer `[[ ]]` over `[ ]`**.

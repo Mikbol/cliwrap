@@ -18,13 +18,22 @@ body:
       required: true
 
   - type: input
-    id: shell
+    id: bash
     attributes:
-      label: Shell and version
-      description: Output of `$SHELL --version | head -1`
-      placeholder: "GNU bash, version 5.2.15"
+      label: Bash version
+      description: Output of `bash --version | head -1` (cliwrap requires bash 4.0+)
+      placeholder: "GNU bash, version 5.2.15(1)-release"
     validations:
       required: true
+
+  - type: input
+    id: shell
+    attributes:
+      label: Login shell (if not bash)
+      description: Output of `$SHELL --version | head -1`
+      placeholder: "zsh 5.9 (x86_64-apple-darwin23.0)"
+    validations:
+      required: false
 
   - type: input
     id: os

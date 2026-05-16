@@ -175,12 +175,9 @@ cmd_remove() {
 cmd_doctor() {
   echo "CLIWRAP_HOME: $CLIWRAP_HOME"
   echo "CLIWRAP_LIB:  $CLIWRAP_LIB"
-  printf 'bash:         %s' "${BASH_VERSION:-unknown}"
-  if [[ "${BASH_VERSINFO:-0}" -lt 4 ]]; then
-    echo "  ⚠  bash 4.0+ required (on macOS: brew install bash)"
-  else
-    echo "  OK"
-  fi
+  local bash_status="OK"
+  [[ "${BASH_VERSINFO:-0}" -lt 4 ]] && bash_status="⚠  bash 4.0+ required (on macOS: brew install bash)"
+  printf 'bash:         %s  %s\n' "${BASH_VERSION:-unknown}" "$bash_status"
   [[ -f "$CLIWRAP_LIB/runtime.sh" ]] \
     && echo "runtime.sh:   OK" \
     || echo "runtime.sh:   MISSING"
