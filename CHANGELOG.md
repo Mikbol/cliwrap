@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Warning to stderr when an extension file lacks a `run()` function
   (previously silent skip)
 - Clear error (exit 64) when a value-flag is invoked without a value
-- CI testing on bash 4.4+ (ubuntu-latest) and bash 5.x (macos-latest)
+- CI testing on bash 5.x (ubuntu-latest and macos-latest); minimum requirement is bash 4.0+
 - Performance regression test (`tests/perf.sh`, `make perf`)
 - 47 new automated tests covering: `--` terminator, flag edge cases,
   hook ordering & failure semantics, nested wrapped calls, post-hook
