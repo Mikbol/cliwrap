@@ -44,7 +44,7 @@ cliwrap_register aws
 aws perftest >/dev/null 2>&1
 
 ITERATIONS=50
-THRESHOLD_MS=500   # per-call budget with 20 extensions in test environment
+THRESHOLD_MS=600   # per-call budget with 20 extensions; 600ms allows macOS CI headroom
 
 START=$(date +%s%N 2>/dev/null)
 for _ in $(seq 1 $ITERATIONS); do
