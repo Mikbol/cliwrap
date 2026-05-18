@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `CLIWRAP_DEBUG=1` mode: emits dispatch and arg-extraction info to stderr
+- POSIX `--` terminator support in arg extraction (everything after `--`
+  is preserved verbatim, no flag parsing)
+- Warning to stderr when an extension file lacks a `run()` function
+  (previously silent skip)
+- Clear error (exit 64) when a value-flag is invoked without a value
+- Bash 4.0 / 4.4 / 5.2 matrix in CI (Docker-based)
+- Performance regression test (`tests/perf.sh`, `make perf`)
+- 35+ new automated tests covering: `--` terminator, flag edge cases,
+  hook ordering & failure semantics, nested wrapped calls, post-hook
+  CLIWRAP_EXIT_CODE, debug mode
+- `docs/ARCHITECTURE.md` — dispatch flow and env contract
+- `docs/EXTENSION_FORMAT.md` — canonical directive reference with edge cases
+- `docs/TROUBLESHOOTING.md` — test-backed common-issue solutions
+
+### Changed
+- In-code comment at `lib/runtime.sh` documenting pre-hook-failure-aborts-chain semantics
+
+### Compatibility
+- No breaking changes. All existing extensions continue to work.
+- Extensions that relied on `--` being parsed as a regular arg (none in
+  examples/) will now see `--` preserved verbatim instead.
+
 ## [1.0.0] - 2026-04-22
 
 Initial release. **Requires bash 4.0+** (associative arrays). On macOS: `brew install bash`.

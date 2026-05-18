@@ -17,7 +17,12 @@ lint: ## Run shellcheck on all shell scripts
 	    tests/*.sh \
 	    examples/*/*.sh
 
+perf: ## Run performance regression test
+	@bash tests/perf.sh
+
 check: lint test ## Run lint + test
+
+check-all: lint test perf ## Run lint + test + perf
 
 install: ## Install to $(PREFIX) (default: ~/.local)
 	@PREFIX=$(PREFIX) bash install.sh
@@ -39,7 +44,7 @@ release-check: ## Verify everything is ready for a release
 	@echo "Version:     $(VERSION)"
 	@git diff --quiet || { echo "ERROR: working tree dirty"; exit 1; }
 	@grep -q "## \[$(VERSION)\]" CHANGELOG.md || { echo "ERROR: CHANGELOG has no entry for $(VERSION)"; exit 1; }
-	@$(MAKE) check
+	@$(MAKE) check-all
 	@echo "✓ Ready to release $(VERSION)"
 	@echo "Run: git tag v$(VERSION) && git push --tags"
 

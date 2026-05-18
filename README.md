@@ -47,6 +47,15 @@ cliwrap --version
 cliwrap doctor
 ```
 
+### Debug mode
+
+Set `CLIWRAP_DEBUG=1` to see which extensions match an invocation and
+what `ARG_*` vars are set:
+
+```bash
+CLIWRAP_DEBUG=1 aws whoami
+```
+
 ---
 
 ## Mental model
@@ -214,6 +223,12 @@ For `aws secretsmanager get-secret-value --secret-id X`:
 
 Ordering tip: prefix files to control order. `00-defaults.sh` runs before
 `10-safety.sh`.
+
+## Further reading
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — dispatch flow, env contract
+- [`docs/EXTENSION_FORMAT.md`](docs/EXTENSION_FORMAT.md) — full directive reference, edge cases
+- [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — common issues and solutions
 
 ---
 

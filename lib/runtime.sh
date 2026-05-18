@@ -9,6 +9,11 @@ if [ "${BASH_VERSINFO:-0}" -lt 4 ]; then
   return 1 2>/dev/null || exit 1
 fi
 
+# CLIWRAP_DEBUG: when set to a non-empty value, prints extension dispatch
+# and argument extraction info to stderr. Useful for troubleshooting why
+# a particular extension is/isn't matching, or what ARG_* vars are set.
+#   $ CLIWRAP_DEBUG=1 aws s3 ls
+
 # A cliwrap "extension" is a single .sh file with metadata in comments:
 #   # @match <pattern>    which subcommand this applies to
 #                         "*"           → all invocations (global)
@@ -73,8 +78,9 @@ _cliwrap_match() {
 
 _cliwrap_extract_args() {
   # _cliwrap_extract_args <file> <args...>
-  # Sets global CLIWRAP_REMAINING=() with non-consumed args
+  # Sets CLIWRAP_REMAINING with non-consumed args
   # Exports ARG_<NAME> for each declared arg
+  # Respects "--" POSIX terminator: everything after "--" goes to REMAINING verbatim.
   local file="$1"; shift
 
   # Parse declared args: lines look like "--flag  description"
@@ -95,21 +101,36 @@ _cliwrap_extract_args() {
   done < <(_cliwrap_meta_all "$file" arg)
 
   CLIWRAP_REMAINING=()
+  local seen_dashdash=0
   while [[ $# -gt 0 ]]; do
     local arg="$1"
+    if [[ "$seen_dashdash" == "1" ]]; then
+      CLIWRAP_REMAINING+=("$arg"); shift; continue
+    fi
+    if [[ "$arg" == "--" ]]; then
+      seen_dashdash=1
+      CLIWRAP_REMAINING+=("$arg"); shift; continue
+    fi
     local base="${arg%%=*}"
     if [[ -n "${flag_name[$base]:-}" ]]; then
       local name="${flag_name[$base]}"
       if [[ "${takes_value[$base]:-}" == "1" ]]; then
         if [[ "$arg" == *"="* ]]; then
           export "ARG_$name"="${arg#*=}"
+          [[ -n "${CLIWRAP_DEBUG:-}" ]] && printf >&2 'cliwrap[debug]: ARG_%s=%s (from %s)\n' "$name" "${arg#*=}" "$file"
           shift
         else
+          if [[ $# -lt 2 ]]; then
+            printf >&2 'cliwrap: %s expects a value (extension: %s)\n' "$base" "$file"
+            return 64   # EX_USAGE
+          fi
           export "ARG_$name"="$2"
+          [[ -n "${CLIWRAP_DEBUG:-}" ]] && printf >&2 'cliwrap[debug]: ARG_%s=%s (from %s)\n' "$name" "$2" "$file"
           shift 2
         fi
       else
         export "ARG_$name"=1
+        [[ -n "${CLIWRAP_DEBUG:-}" ]] && printf >&2 'cliwrap[debug]: ARG_%s=1 (from %s)\n' "$name" "$file"
         shift
       fi
     else
@@ -138,15 +159,19 @@ _cliwrap_clear_args() {
 
 _cliwrap_run_hook() {
   local file="$1"; shift
-  _cliwrap_extract_args "$file" "$@"
+  _cliwrap_extract_args "$file" "$@" || return $?
   local args=("${CLIWRAP_REMAINING[@]}")
   # shellcheck disable=SC1090
   source "$file"
   local rc=0
   if declare -F run >/dev/null 2>&1; then
+    [[ -n "${CLIWRAP_DEBUG:-}" ]] && printf >&2 'cliwrap[debug]: run() in %s\n' "$file"
     run "${args[@]}"
     rc=$?
     unset -f run
+  else
+    printf >&2 'cliwrap: extension %s defines no run() function (skipped)\n' "$file"
+    rc=0
   fi
   _cliwrap_clear_args "$file"
   return $rc
@@ -177,8 +202,15 @@ _cliwrap_strip_declared_args() {
     done < <(_cliwrap_meta_all "$f" arg)
   done
 
-  local out=()
+  local out=() seen_dashdash=0
   while [[ $# -gt 0 ]]; do
+    if [[ "$seen_dashdash" == "1" ]]; then
+      out+=("$1"); shift; continue
+    fi
+    if [[ "$1" == "--" ]]; then
+      seen_dashdash=1
+      out+=("$1"); shift; continue
+    fi
     local arg="$1" base="${1%%=*}"
     if [[ -n "${known[$base]:-}" ]]; then
       if [[ "${takes_value[$base]:-}" == "1" && "$arg" != *"="* ]]; then
@@ -236,6 +268,10 @@ cliwrap_dispatch() {
   done
 
   # Lifecycle: pre → (replace | native) → post
+  # Pre-hooks execute in filename order. If ANY pre-hook returns non-zero,
+  # the chain stops: the native CLI is NOT invoked and no post-hooks run.
+  # This is intentional: pre-hooks act as gates (e.g. safe-push protection).
+  # Post-hook failures, by contrast, never abort the chain (see below).
   for f in "${pre_hooks[@]}"; do
     _cliwrap_run_hook "$f" "$@" || return $?
   done

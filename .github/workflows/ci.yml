@@ -45,6 +45,30 @@ jobs:
       - name: Run end-to-end tests
         run: make test
 
+  test-bash-versions:
+    name: Test (bash ${{ matrix.bash }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bash: ["4.0", "4.4", "5.2"]
+    container:
+      image: bash:${{ matrix.bash }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build deps in container
+        run: apk add --no-cache make grep sed coreutils
+
+      - name: Show bash version
+        run: bash --version
+
+      - name: Run end-to-end tests
+        run: bash tests/e2e.sh
+
+      - name: Run performance test (smoke only)
+        run: bash tests/perf.sh
+
   install:
     name: Install + smoke test
     runs-on: ubuntu-latest
