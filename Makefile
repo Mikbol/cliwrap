@@ -1,4 +1,4 @@
-.PHONY: help test lint install uninstall clean release-check dist
+.PHONY: help test lint perf check check-all install uninstall clean release-check dist
 
 PREFIX ?= $(HOME)/.local
 VERSION := $(shell cat VERSION)
