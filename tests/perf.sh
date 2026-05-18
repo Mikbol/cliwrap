@@ -9,8 +9,9 @@ export CLIWRAP_HOME
 export CLIWRAP_LIB="$ROOT/lib"
 
 FAKE_BIN=$(mktemp -d)
-cat > "$FAKE_BIN/aws" <<'EOF'
-#!/bin/bash
+BASH_PATH=$(which bash)
+cat > "$FAKE_BIN/aws" <<EOF
+#!$BASH_PATH
 exit 0
 EOF
 chmod +x "$FAKE_BIN/aws"

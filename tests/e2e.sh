@@ -11,7 +11,7 @@ export CLIWRAP_LIB="$ROOT/lib"
 FAKE_BIN=$(mktemp -d)
 for tool in aws git docker; do
   cat > "$FAKE_BIN/$tool" <<EOF
-#!/bin/bash
+#!$(which bash)
 echo "[REAL $tool] \$@ | AWS_REGION=\${AWS_REGION:-unset} AWS_PROFILE=\${AWS_PROFILE:-unset} AWS_PAGER=\${AWS_PAGER:-unset}"
 EOF
   chmod +x "$FAKE_BIN/$tool"
