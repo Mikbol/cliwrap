@@ -45,6 +45,25 @@ jobs:
       - name: Run end-to-end tests
         run: make test
 
+      - name: Run performance regression test
+        run: make perf
+
+  test-bash-versions:
+    name: Test bash versions (documented as 4.0+ via ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Show bash version
+        run: bash --version
+
+      - name: Note on bash compatibility
+        run: |
+          echo "cliwrap is tested on:"
+          echo "  - ubuntu-latest (bash 5.x, GNU tools)"
+          echo "  - macos-latest (bash 5.x via brew, BSD tools)"
+          echo "Bash 4.0+ is the minimum requirement; see README.md"
+
   install:
     name: Install + smoke test
     runs-on: ubuntu-latest
