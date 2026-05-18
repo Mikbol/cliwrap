@@ -19,6 +19,8 @@ export PATH="$FAKE_BIN:$PATH"
 mkdir -p "$CLIWRAP_HOME/aws"
 # Generate 20 trivial extensions
 for i in $(seq -w 1 20); do
+  # Variable expansion needed in heredoc (quoted delimiter would prevent it)
+  # shellcheck disable=SC2086
   cat > "$CLIWRAP_HOME/aws/ext$i.sh" <<EOF
 # @match perftest
 # @mode  pre
@@ -26,6 +28,7 @@ for i in $(seq -w 1 20); do
 run() { :; }
 EOF
 done
+# shellcheck disable=SC2086
 cat > "$CLIWRAP_HOME/aws/perf-replace.sh" <<EOF
 # @match perftest
 # @mode  replace

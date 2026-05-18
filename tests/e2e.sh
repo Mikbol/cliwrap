@@ -177,7 +177,7 @@ check "empty value preserved"              "OUTPUT="               "$out"
 out=$(aws flagedge --output=hello extra positional 2>&1)
 check "positional args preserved"          "remaining=[flagedge extra positional]" "$out"
 
-out=$(aws flagedge --output 2>&1) || true
+out=$(aws flagedge --output 2>&1 || true)
 check "missing value errors clearly"       "expects a value"       "$out"
 
 echo
