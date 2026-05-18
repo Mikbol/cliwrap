@@ -45,6 +45,9 @@ jobs:
       - name: Run end-to-end tests
         run: make test
 
+      - name: Run performance regression test
+        run: make perf
+
   test-bash-versions:
     name: Test bash versions (documented as 4.0+ via ubuntu-latest)
     runs-on: ubuntu-latest
