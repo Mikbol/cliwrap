@@ -201,7 +201,7 @@ EOF
 
 out=$(git order-test 2>&1)
 check "all 3 pre-hooks executed"           "done"                  "$out"
-log_content=$(cat "$ORDER_LOG" | tr '\n' ' ')
+log_content=$(tr '\n' ' ' < "$ORDER_LOG")
 check "pre-hooks ran in filename order"    "step-1 step-2 step-3"  "$log_content"
 
 echo
