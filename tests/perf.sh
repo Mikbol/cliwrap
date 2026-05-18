@@ -46,15 +46,16 @@ aws perftest >/dev/null 2>&1
 ITERATIONS=50
 THRESHOLD_MS=500   # per-call budget with 20 extensions in test environment
 
-START=$(date +%s%N 2>/dev/null || echo "0")
+START=$(date +%s%N 2>/dev/null)
 for _ in $(seq 1 $ITERATIONS); do
   aws perftest >/dev/null 2>&1
 done
-END=$(date +%s%N 2>/dev/null || echo "0")
+END=$(date +%s%N 2>/dev/null)
 
-# date +%s%N gives nanoseconds; macOS BSD date lacks %N — guard:
-if [[ "$START" == "0" || "$END" == "0" ]]; then
-  echo "perf.sh: BSD date detected (no %N); skipping precise timing on this OS."
+# date +%s%N gives nanoseconds; macOS BSD date outputs literal %N like "1234567890N"
+# Check if the output contains non-digits (the literal 'N' or other chars)
+if [[ ! "$START" =~ ^[0-9]+$ || ! "$END" =~ ^[0-9]+$ ]]; then
+  echo "perf.sh: BSD date detected (no nanoseconds); skipping precise timing on this OS."
   echo "perf.sh: ran $ITERATIONS iterations successfully — no crash."
   exit 0
 fi
